@@ -1,12 +1,14 @@
 const express = require("express");
-const app = express();
-app.use(express.json());
-app.listen(1234);
+const router = express.Router();
+router.use(express.json());
 
 const db = new Map();
 let id = 1;
+db.set(id++, { name: "userA" });
+db.set(id++, { name: "userB" });
+db.set(id++, { name: "userC" });
 
-app
+router
   .route("/users/:id")
   .get((req, res) => {
     let { id } = req.params;
@@ -32,7 +34,7 @@ app
     }
   });
 
-app.post("/join", (req, res) => {
+router.post("/join", (req, res) => {
   if (Object.keys(req.body).length !== 0) {
     db.set(id++, req.body);
     res
@@ -43,7 +45,7 @@ app.post("/join", (req, res) => {
   }
 });
 
-app.post("/login", (req, res) => {
+router.post("/login", (req, res) => {
   const { name, password } = req.body;
   let loginUser = {};
   db.forEach((user) => {
@@ -62,3 +64,5 @@ app.post("/login", (req, res) => {
 
   res.status(200).json({ message: `${loginUser.name}님 로그인 되었습니다.` });
 });
+
+module.exports = router;

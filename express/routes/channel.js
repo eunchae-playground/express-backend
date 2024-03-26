@@ -1,15 +1,25 @@
 const express = require("express");
-const app = express();
-app.use(express.json());
-app.listen(1234);
+const router = express.Router();
+router.use(express.json());
 
 let db = new Map();
 let id = 1;
+db.set(id++, { userId: 1, title: "titleA" });
+db.set(id++, { userId: 2, title: "titleB" });
+db.set(id++, { userId: 1, title: "titleC" });
 
-app
-  .route("/channels")
+router
+  .route("/")
   .get((req, res) => {
-    res.status(200).json(Array.from(db.values()))
+    const { userId } = req.body;
+    const channels = Array.from(db.values());
+    if (userId) {
+      res
+        .status(200)
+        .json(channels.filter((channel) => channel.userId === userId));
+    } else {
+      res.status(200).json(channels);
+    }
   })
   .post((req, res) => {
     if (req.body.title) {
@@ -22,8 +32,8 @@ app
     }
   });
 
-app
-  .route("/channels/:id")
+router
+  .route("/:id")
   .get((req, res) => {
     let { id } = req.params;
     id = parseInt(id);
@@ -43,11 +53,9 @@ app
     const channel = db.get(id);
     if (channel) {
       db.set(id, { ...channel, title });
-      res
-        .status(200)
-        .json({
-          message: `${channel.title}에서 ${title}로 채널명이 수정되었습니다.`,
-        });
+      res.status(200).json({
+        message: `${channel.title}에서 ${title}로 채널명이 수정되었습니다.`,
+      });
     } else {
       res.status(404).json({ message: "채널을 찾을 수 없습니다." });
     }
@@ -66,3 +74,5 @@ app
       res.status(404).json({ message: "채널을 찾을 수 없습니다." });
     }
   });
+
+module.exports = router;
