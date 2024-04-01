@@ -1,78 +1,81 @@
-const express = require("express");
+import express from "express";
+import connection from "../db.js";
+
 const router = express.Router();
 router.use(express.json());
 
-let db = new Map();
-let id = 1;
-db.set(id++, { userId: 1, title: "titleA" });
-db.set(id++, { userId: 2, title: "titleB" });
-db.set(id++, { userId: 1, title: "titleC" });
-
 router
   .route("/")
-  .get((req, res) => {
-    const { userId } = req.body;
-    const channels = Array.from(db.values());
+  .get(async (req, res) => {
+    const { userId } = req.query;
+
     if (userId) {
-      res
-        .status(200)
-        .json(channels.filter((channel) => channel.userId === userId));
-    } else {
-      res.status(200).json(channels);
+      const sql = "SELECT * FROM `channels` WHERE `user_id` = ?";
+      const [channels, _] = await connection.query(sql, [userId]);
+      return res.status(200).json(channels);
     }
+
+    const sql = "SELECT * FROM `channels`";
+    const [channels, _] = await connection.query(sql);
+    return res.status(200).json(channels);
   })
-  .post((req, res) => {
-    if (req.body.title) {
-      db.set(id++, req.body);
-      res
-        .status(201)
-        .json({ message: `${req.body.title} 채널이 추가되었습니다.` });
-    } else {
-      res.status(400).json({ message: "요청값이 잘못되었습니다." });
+  .post(async (req, res) => {
+    try {
+      const sql =
+        "INSERT INTO `channels` (`name`, `sub_name`, `user_id`) VALUES (?, ?, ?)";
+      const { name, subName, userId } = req.body;
+      await connection.query(sql, [name, subName, userId]);
+
+      return res.status(201).json({ message: "채널이 추가되었습니다." });
+    } catch (error) {
+      return res.status(400).json({ message: error.sqlMessage });
     }
   });
 
 router
   .route("/:id")
-  .get((req, res) => {
+  .get(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
 
-    const channel = db.get(id);
-    if (channel) {
-      res.status(200).json(channel);
+    const sql = "SELECT * FROM `channels` WHERE `id` = ?";
+    const [results, _] = await connection.query(sql, [id]);
+
+    if (results.length > 0) {
+      return res.status(200).json(results[0]);
     } else {
-      res.status(404).json({ message: "채널을 찾을 수 없습니다." });
+      return res.status(404).json({ message: "채널이 존재하지 않습니다." });
     }
   })
-  .put((req, res) => {
+  .put(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
-    const { title } = req.body;
+    const { name, subName } = req.body;
 
-    const channel = db.get(id);
-    if (channel) {
-      db.set(id, { ...channel, title });
-      res.status(200).json({
-        message: `${channel.title}에서 ${title}로 채널명이 수정되었습니다.`,
+    try {
+      const sql =
+        "UPDATE `channels` SET `name` = ?, `sub_name` = ? WHERE `id` = ?";
+      await connection.query(sql, [name, subName, id]);
+      return res.status(200).json({
+        message: "채널 정보가 수정되었습니다.",
       });
-    } else {
-      res.status(404).json({ message: "채널을 찾을 수 없습니다." });
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ message: error.sqlMessage });
     }
   })
-  .delete((req, res) => {
+  .delete(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
 
-    const channel = db.get(id);
-    if (channel) {
-      db.delete(id);
-      res
-        .status(200)
-        .json({ message: `${channel.title}채널이 삭제되었습니다.` });
-    } else {
-      res.status(404).json({ message: "채널을 찾을 수 없습니다." });
+    try {
+      const sql = "DELETE FROM `channels` WHERE `id` = ?";
+      await connection.query(sql, [id]);
+      return res.status(200).json({ message: `채널이 삭제 되었습니다.` });
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ message: error.sqlMessage });
     }
   });
 
-module.exports = router;
+export default router;

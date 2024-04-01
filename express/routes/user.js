@@ -1,68 +1,63 @@
-const express = require("express");
+import express from "express";
+import connection from "../db.js";
+
 const router = express.Router();
 router.use(express.json());
 
-const db = new Map();
-let id = 1;
-db.set(id++, { name: "userA" });
-db.set(id++, { name: "userB" });
-db.set(id++, { name: "userC" });
-
 router
   .route("/users/:id")
-  .get((req, res) => {
+  .get(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
 
-    const user = db.get(id);
-    if (user) {
-      res.status(200).json({ name: user.name });
+    const sql = "SELECT * FROM `users` WHERE `id` = ?";
+    const [results, _] = await connection.query(sql, [id]);
+
+    if (results.length > 0) {
+      const { id, name, email, contact } = results[0];
+      return res.status(200).json({ id, name, email, contact });
     } else {
-      res.status(404).json({ message: "회원 정보가 없습니다." });
+      return res.status(404).json({ message: "회원 정보가 없습니다." });
     }
   })
-  .delete((req, res) => {
+  .delete(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
 
-    const user = db.get(id);
-    if (user) {
-      db.delete(id);
-      res.status(200).json({ message: `${user.name}님 삭제되었습니다.` });
-    } else {
-      res.status(404).json({ message: "회원 정보가 없습니다." });
+    try {
+      const sql = "DELETE FROM `users` WHERE `id` = ?";
+      await connection.query(sql, [id]);
+      return res.status(200).json({ message: `회원 탈퇴 되었습니다.` });
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ message: error.sqlMessage });
     }
   });
 
-router.post("/join", (req, res) => {
-  if (Object.keys(req.body).length !== 0) {
-    db.set(id++, req.body);
-    res
-      .status(201)
-      .json({ message: `${db.get(id - 1).name}님 회원가입 되었습니다.` });
-  } else {
-    res.status(400).json({ message: "입력값을 다시 확인해주세요" });
+router.post("/join", async (req, res) => {
+  try {
+    const sql =
+      "INSERT INTO `users` (`email`, `name`, `password`, `contact`) VALUES (?, ?, ?, ?)";
+    const { email, name, password, contact } = req.body;
+    await connection.query(sql, [email, name, password, contact]);
+
+    console.log(user);
+    return res.status(201).json({ message: "회원가입 되었습니다." });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ message: error.sqlMessage });
   }
 });
 
-router.post("/login", (req, res) => {
-  const { name, password } = req.body;
-  let loginUser = {};
-  db.forEach((user) => {
-    if (user.name === name) {
-      loginUser = user;
-    }
-  });
+router.post("/login", async (req, res) => {
+  const sql = "SELECT * FROM `users` WHERE `email` = ?";
+  const [results, _] = await connection.query(sql, [req.body.email]);
 
-  if (Object.keys(loginUser).length < 1) {
-    res.status(404).json({ message: "존재하지 않는 유저입니다." });
+  if (results < 1 || results[0].password !== req.body.password) {
+    return res.status(401).json({ message: "유저 정보가 잘못되었습니다." });
   }
 
-  if (loginUser.password !== password) {
-    res.status(401).json({ message: "비밀번호가 틀렸습니다." });
-  }
-
-  res.status(200).json({ message: `${loginUser.name}님 로그인 되었습니다.` });
+  return res.status(200).send();
 });
 
-module.exports = router;
+export default router;
