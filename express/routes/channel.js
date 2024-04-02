@@ -1,6 +1,10 @@
 import express from "express";
 import connection from "../db.js";
-
+import {
+  getCreateChannelChains,
+  getUpdateChannelChains,
+} from "../validator/chains/channel.js";
+import validationErrorChecker from "../validator/middlewares/validationErrorChecker.js";
 const router = express.Router();
 router.use(express.json());
 
@@ -19,18 +23,21 @@ router
     const [channels, _] = await connection.query(sql);
     return res.status(200).json(channels);
   })
-  .post(async (req, res) => {
-    try {
-      const sql =
-        "INSERT INTO `channels` (`name`, `sub_name`, `user_id`) VALUES (?, ?, ?)";
-      const { name, subName, userId } = req.body;
-      await connection.query(sql, [name, subName, userId]);
+  .post(
+    [...getCreateChannelChains(), validationErrorChecker],
+    async (req, res) => {
+      try {
+        const sql =
+          "INSERT INTO `channels` (`name`, `sub_name`, `user_id`) VALUES (?, ?, ?)";
+        const { name, subName, userId } = req.body;
+        await connection.query(sql, [name, subName, userId]);
 
-      return res.status(201).json({ message: "채널이 추가되었습니다." });
-    } catch (error) {
-      return res.status(400).json({ message: error.sqlMessage });
+        return res.status(201).json({ message: "채널이 추가되었습니다." });
+      } catch (error) {
+        return res.status(400).json({ message: error.sqlMessage });
+      }
     }
-  });
+  );
 
 router
   .route("/:id")
@@ -47,23 +54,25 @@ router
       return res.status(404).json({ message: "채널이 존재하지 않습니다." });
     }
   })
-  .put(async (req, res) => {
-    let { id } = req.params;
-    id = parseInt(id);
-    const { name, subName } = req.body;
+  .put(
+    [...getUpdateChannelChains(), validationErrorChecker],
+    async (req, res) => {
+      let { id } = req.params;
+      id = parseInt(id);
+      const { name } = req.body;
 
-    try {
-      const sql =
-        "UPDATE `channels` SET `name` = ?, `sub_name` = ? WHERE `id` = ?";
-      await connection.query(sql, [name, subName, id]);
-      return res.status(200).json({
-        message: "채널 정보가 수정되었습니다.",
-      });
-    } catch (error) {
-      console.log(error);
-      return res.status(400).json({ message: error.sqlMessage });
+      try {
+        const sql = "UPDATE `channels` SET `name` = ? WHERE `id` = ?";
+        await connection.query(sql, [name, id]);
+        return res.status(200).json({
+          message: "채널 정보가 수정되었습니다.",
+        });
+      } catch (error) {
+        console.log(error);
+        return res.status(400).json({ message: error.sqlMessage });
+      }
     }
-  })
+  )
   .delete(async (req, res) => {
     let { id } = req.params;
     id = parseInt(id);
