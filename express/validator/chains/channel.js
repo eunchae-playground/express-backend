@@ -1,10 +1,10 @@
 import { body } from "express-validator";
 
-const validateNameChain = () => {
+const getNameChain = () => {
   return body("name").notEmpty().withMessage("채널명을 입력해 주세요.");
 };
 
-const validateSubNameChain = () => {
+const getSubNameChain = () => {
   return body("subName")
     .notEmpty()
     .withMessage("서브 채널명을 입력해 주세요.")
@@ -14,9 +14,9 @@ const validateSubNameChain = () => {
 };
 
 export const getCreateChannelChains = () => {
-  return [validateNameChain(), validateSubNameChain()];
+  return [getNameChain(), getSubNameChain()];
 };
 
 export const getUpdateChannelChains = () => {
-  return [validateNameChain()];
+  return [getNameChain()];
 };
