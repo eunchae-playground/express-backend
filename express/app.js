@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import channelRouter from "./routes/channel.js";
 import userRouter from "./routes/user.js";
