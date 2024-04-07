@@ -67,9 +67,14 @@ router.post(
     }
     const user = results[0];
     const JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
-    const accessToken = jwt.sign({ id: user.id }, JWT_PRIVATE_KEY);
+    const accessToken = jwt.sign({ id: user.id }, JWT_PRIVATE_KEY, {
+      expiresIn: "30m", issuer: "eunchae"
+    });
 
-    return res.status(200).json({ accessToken });
+    res.cookie("access-token", accessToken, {
+      httpOnly: true,
+    });
+    return res.status(200).send();
   }
 );
 
