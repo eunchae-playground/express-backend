@@ -9,27 +9,28 @@ const getEmailChain = () => {
     .withMessage("이메일 형식에 맞게 입력해 주세요.");
 };
 
-const getNameChain = () => {
-  return body("name").notEmpty().withMessage("이름을 입력해 주세요.");
-};
-
 const getPasswordChain = () => {
   return body("password").notEmpty().withMessage("비밀번호를 입력해 주세요.");
 };
 
-const getContactChain = () => {
-  return body("contact").notEmpty().withMessage("연락처를 입력해 주세요.");
+const getConfirmPasswordChain = () => {
+  return body("confirmPassword")
+    .notEmpty()
+    .withMessage("비밀번호를 입력해 주세요.");
 };
 
 export const getJoinChains = () => {
-  return [
-    getEmailChain(),
-    getNameChain(),
-    getPasswordChain(),
-    getContactChain(),
-  ];
+  return [getEmailChain(), getPasswordChain()];
 };
 
 export const getLoginChains = () => {
   return [getEmailChain(), getPasswordChain()];
+};
+
+export const getResetPasswordRequestChains = () => {
+  return [getEmailChain()];
+};
+
+export const getResetPasswordChains = () => {
+  return [getPasswordChain(), getConfirmPasswordChain()];
 };

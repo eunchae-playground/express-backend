@@ -1,24 +1,38 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import connection from "../db.js";
+import * as controller from "../controllers/users.js";
+import * as chain from "../validators/chains/user.js";
+import isAuthenticated from "../validators/middlewares/isAuthenticated.js";
+import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
 
 const router = express.Router();
 router.use(express.json());
 
-router.post('/join', (req, res) => {
+router.post(
+  "/join",
+  [...chain.getJoinChains(), validationErrorChecker],
+  controller.join
+);
 
-});
+router.post(
+  "/login",
+  [...chain.getLoginChains(), validationErrorChecker],
+  controller.login
+);
 
-router.post('/login', (req, res) => {
+router.post(
+  "/users/reset-password/request",
+  [
+    ...chain.getResetPasswordRequestChains(),
+    isAuthenticated,
+    validationErrorChecker,
+  ],
+  controller.resetPasswordRequest
+);
 
-});
+router.put(
+  "/users/reset-password/complete",
+  [...chain.getResetPasswordChains(), isAuthenticated, validationErrorChecker],
+  controller.resetPassword
+);
 
-router.post('/users/reset', (req, res) => {
-
-});
-
-router.put('/users/reset', (req, res) => {
-
-});
-
-export default router
+export default router;
