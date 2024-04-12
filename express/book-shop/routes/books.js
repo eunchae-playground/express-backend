@@ -1,15 +1,23 @@
 import express from "express";
-import connection from "../db.js";
+import * as controller from "../controllers/books.js";
+import * as chain from "../validators/chains/book.js";
+import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
 
 const router = express.Router();
 router.use(express.json());
 
-router.get('/', (req, res) => {
+router.get("/", [validationErrorChecker], controller.allBooks);
 
-});
+router.get(
+  "/:id([0-9]+)",
+  [...chain.getBookDetailChains(), validationErrorChecker],
+  controller.bookDetail
+);
 
-router.get('/:id', (req, res) => {
+router.get(
+  "/categories",
+  [validationErrorChecker],
+  controller.allBookCategories
+);
 
-});
-
-export default router
+export default router;
