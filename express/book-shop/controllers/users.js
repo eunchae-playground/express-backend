@@ -52,11 +52,11 @@ export const login = async (req, res) => {
   res.cookie("access-token", accessToken, {
     httpOnly: true,
   });
-  return res.status(StatusCodes.OK).send();
+  return res.status(StatusCodes.OK).end();
 };
 
 export const resetPasswordRequest = async (req, res) => {
-  res.status(StatusCodes.OK).send();
+  res.status(StatusCodes.OK).end();
 };
 
 export const resetPassword = async (req, res) => {
@@ -76,7 +76,7 @@ export const resetPassword = async (req, res) => {
 
     const sql = "UPDATE `users` SET `password` = ?, `salt` = ? WHERE `id` = ?";
     await connection.query(sql, [hashedPassword, salt, req.userId]);
-    return res.status(StatusCodes.OK).send();
+    return res.status(StatusCodes.OK).end();
   } catch (error) {
     return res
       .status(StatusCodes.BAD_REQUEST)
