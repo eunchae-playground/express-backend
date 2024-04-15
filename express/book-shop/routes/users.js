@@ -1,7 +1,7 @@
 import express from "express";
 import * as controller from "../controllers/users.js";
 import * as chain from "../validators/chains/user.js";
-import isAuthenticated from "../validators/middlewares/isAuthenticated.js";
+import authenticate from "../validators/middlewares/authenticate.js";
 import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.post(
   "/users/reset-password/request",
   [
     ...chain.getResetPasswordRequestChains(),
-    isAuthenticated,
+    authenticate,
     validationErrorChecker,
   ],
   controller.resetPasswordRequest
@@ -31,7 +31,7 @@ router.post(
 
 router.put(
   "/users/reset-password/complete",
-  [...chain.getResetPasswordChains(), isAuthenticated, validationErrorChecker],
+  [...chain.getResetPasswordChains(), authenticate, validationErrorChecker],
   controller.resetPassword
 );
 

@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
-const isAuthenticated = (req, res, next) => {
+const authenticate = (req, res, next) => {
   const { "access-token": accessToken } = req.cookies;
 
   if (!accessToken) {
@@ -23,4 +23,4 @@ const isAuthenticated = (req, res, next) => {
   }
 };
 
-export default isAuthenticated;
+export default authenticate;
