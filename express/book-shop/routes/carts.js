@@ -1,19 +1,24 @@
 import express from "express";
-import connection from "../db.js";
+import * as controller from "../controllers/carts.js";
+import * as chain from "../validators/chains/cart.js";
+import authenticate from "../validators/middlewares/authenticate.js";
+import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
 
 const router = express.Router();
 router.use(express.json());
 
-router.get('/', (req, res) => {
+router.get("/", [authenticate], controller.myCarts);
 
-});
+router.post(
+  "/",
+  [...chain.getAddCartChains(), authenticate, validationErrorChecker],
+  controller.addCart
+);
 
-router.post('/', (req, res) => {
+router.delete(
+  "/:id",
+  [...chain.getDeleteCartChains(), authenticate],
+  controller.deleteCart
+);
 
-});
-
-router.delete('/:id', (req, res) => {
-
-});
-
-export default router
+export default router;
