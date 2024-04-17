@@ -1,19 +1,16 @@
 import express from "express";
-import connection from "../db.js";
+import * as controller from "../controllers/orders.js";
+import * as chain from "../validators/chains/order.js";
+import authenticate from "../validators/middlewares/authenticate.js";
+import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
 
 const router = express.Router();
 router.use(express.json());
 
-router.get('/', (req, res) => {
+router.post(
+  "/",
+  [...chain.getCreateOrderChains(), authenticate, validationErrorChecker],
+  controller.createOrder
+);
 
-});
-
-router.post('/', (req, res) => {
-
-});
-
-router.delete('/:id', (req, res) => {
-
-});
-
-export default router
+export default router;
