@@ -16,9 +16,16 @@ router.post(
 );
 
 router.delete(
+  "/",
+  [...chain.getDeleteCartsChains(), authenticate],
+  controller.deleteCarts
+);
+
+router.delete(
   "/:id",
   [...chain.getDeleteCartChains(), authenticate],
   controller.deleteCart
 );
+
 
 export default router;

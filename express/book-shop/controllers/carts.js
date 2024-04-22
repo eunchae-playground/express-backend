@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
-import connection from "../db.js";
+import mysql from "mysql2/promise";
+import connection, { connectionOption } from "../db.js";
 
 export const myCarts = async (req, res) => {
   try {
@@ -81,5 +82,47 @@ export const deleteCart = async (req, res) => {
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json({ message: error.sqlMessage });
+  }
+};
+
+export const deleteCarts = async (req, res) => {
+  const pool = mysql.createPool({ ...connectionOption, connectionLimit: 5 });
+  const connection = await pool.getConnection();
+
+  try {
+    const { userId } = req;
+    const { ids } = req.body;
+
+    if (!ids || ids.length < 1) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "삭제할 장바구니 목록을 선택해 주세요." });
+    }
+
+    for (const id of ids) {
+      const CART_SQL = `SELECT * from carts WHERE id = ${id}`;
+      const [cartResult] = await connection.query(CART_SQL);
+      if (cartResult.length < 1) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "유효하지 않은 id값이 존재합니다." });
+      }
+      if (cartResult[0].user_id !== userId) {
+        return res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "권한이 없습니다." });
+      }
+    }
+
+    const DELETE_CART_SQL = `DELETE FROM carts WHERE id in (${ids}) AND user_id = ${userId}`;
+    await connection.query(DELETE_CART_SQL);
+    return res.status(StatusCodes.OK).end();
+  } catch (error) {
+    await connection.rollback();
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: error.sqlMessage });
+  } finally {
+    connection.release();
   }
 };

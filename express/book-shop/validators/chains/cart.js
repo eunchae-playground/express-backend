@@ -9,6 +9,15 @@ const getIdChain = () => {
     .withMessage("유효하지 않은 id값 입니다.");
 };
 
+const getIdsChain = () => {
+  return body("ids")
+    .notEmpty()
+    .withMessage("ids값이 존재하지 않습니다.")
+    .bail()
+    .isArray()
+    .withMessage("유효하지 않은 ids값 입니다.");
+};
+
 const getBookIdChain = () => {
   return body("bookId")
     .notEmpty()
@@ -29,6 +38,10 @@ const getAmountChain = () => {
 
 export const getAddCartChains = () => {
   return [getBookIdChain(), getAmountChain()];
+};
+
+export const getDeleteCartsChains = () => {
+  return [getIdsChain()];
 };
 
 export const getDeleteCartChains = () => {

@@ -7,6 +7,8 @@ import validationErrorChecker from "../validators/middlewares/validationErrorChe
 const router = express.Router();
 router.use(express.json());
 
+router.get("/", [authenticate], controller.myOrders);
+
 router.post(
   "/",
   [...chain.getCreateOrderChains(), authenticate, validationErrorChecker],

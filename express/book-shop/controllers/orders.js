@@ -1,6 +1,38 @@
 import { StatusCodes } from "http-status-codes";
 import mysql from "mysql2/promise";
-import { connectionOption } from "../db.js";
+import connection, { connectionOption } from "../db.js";
+
+export const myOrders = async (req, res) => {
+  try {
+    const { userId } = req;
+
+    const ORDERS_SQL = `
+      SELECT
+        orders.id,
+        delivery_infoes.address,
+        delivery_infoes.receiver,
+        delivery_infoes.address,
+        books.title,
+        books.price as book_price,
+        orders.book_amount,
+        orders.ordered_at
+      FROM orders
+      LEFT JOIN books
+      ON orders.book_id = books.id
+      LEFT JOIN delivery_infoes
+      ON orders.delivery_info_id = delivery_infoes.id
+      WHERE user_id = ${userId}
+    `;
+    const [ordersResult] = await connection.query(ORDERS_SQL);
+
+    return res.status(StatusCodes.OK).json(ordersResult);
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: error.sqlMessage });
+  }
+};
 
 export const createOrder = async (req, res) => {
   const pool = mysql.createPool({ ...connectionOption, connectionLimit: 5 });
