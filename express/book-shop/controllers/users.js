@@ -20,10 +20,9 @@ export const join = async (req, res) => {
       .status(StatusCodes.CREATED)
       .json({ message: "회원가입 되었습니다." });
   } catch (error) {
-    console.log(error);
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -79,7 +78,7 @@ export const resetPassword = async (req, res) => {
     return res.status(StatusCodes.OK).end();
   } catch (error) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };

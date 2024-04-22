@@ -29,8 +29,8 @@ export const myOrders = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };
 

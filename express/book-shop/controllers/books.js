@@ -114,7 +114,7 @@ export const toggleBookLike = async (req, res) => {
     return res.status(StatusCodes.OK).json({ isLike: false });
   } catch (error) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };

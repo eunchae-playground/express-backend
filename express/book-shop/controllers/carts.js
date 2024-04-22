@@ -19,8 +19,8 @@ export const myCarts = async (req, res) => {
     return res.status(StatusCodes.OK).json(cartsResult);
   } catch (error) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -52,8 +52,8 @@ export const addCart = async (req, res) => {
     return res.status(StatusCodes.CREATED).end();
   } catch (error) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -80,8 +80,8 @@ export const deleteCart = async (req, res) => {
     return res.status(StatusCodes.OK).end();
   } catch (error) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -120,8 +120,8 @@ export const deleteCarts = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: error.sqlMessage });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "서버 오류가 발생했습니다." });
   } finally {
     connection.release();
   }
