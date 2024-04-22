@@ -11,8 +11,8 @@ const useLoggedInUser = (req, res, next) => {
     const JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
     const decodedJwt = jwt.verify(accessToken, JWT_PRIVATE_KEY);
     req.userId = decodedJwt.id;
-    return next();
   } catch (error) {
+  } finally {
     return next();
   }
 };
