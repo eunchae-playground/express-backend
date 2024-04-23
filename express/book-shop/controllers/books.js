@@ -38,7 +38,7 @@ export const allBooks = async (req, res) => {
 
   sql += ` LIMIT ${size} OFFSET ${offset}`;
 
-  const [books, _] = await connection.query(sql);
+  const [books] = await connection.query(sql);
   return res.status(200).json(books);
 };
 
@@ -68,7 +68,7 @@ export const bookDetail = async (req, res) => {
     LEFT JOIN book_categories ON books.category_id = book_categories.id
     WHERE books.id = ${id}
   `;
-  const [results, _] = await connection.query(sql);
+  const [results] = await connection.query(sql);
 
   if (results.length > 0) {
     return res.status(StatusCodes.OK).json(results[0]);
@@ -81,7 +81,7 @@ export const bookDetail = async (req, res) => {
 
 export const allBookCategories = async (req, res) => {
   const sql = "SELECT * FROM `book_categories`";
-  const [bookCategories, _] = await connection.query(sql);
+  const [bookCategories] = await connection.query(sql);
   return res.status(StatusCodes.OK).json(bookCategories);
 };
 

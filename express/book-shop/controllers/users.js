@@ -30,7 +30,7 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   const sql = "SELECT * FROM `users` WHERE `email` = ?";
-  const [results, _] = await connection.query(sql, [email]);
+  const [results] = await connection.query(sql, [email]);
   const { password: hashedPassword, salt, id } = results[0] || {};
   const hashedInputPassword =
     results[0] &&
