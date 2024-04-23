@@ -6,21 +6,22 @@ export const allBooks = async (req, res) => {
   const { categoryId, latest, page = 1, size = 10 } = req.query;
   const offset = (page - 1) * size;
 
+  const isLikedField = `
+    IF(
+      EXISTS (
+        SELECT *
+        FROM book_user_likes 
+        WHERE 
+          books.id = book_user_likes.book_id AND
+          book_user_likes.user_id = ${userId}
+      ), TRUE, FALSE
+    ) AS is_liked,
+  `;
   let sql = `
     SELECT 
       books.*,
       (SELECT count(*) FROM book_user_likes WHERE books.id = book_user_likes.book_id) AS like_count,
-      IF(
-        EXISTS (
-          SELECT *
-          FROM book_user_likes 
-          WHERE 
-            books.id = book_user_likes.book_id ${
-              userId ? "AND book_user_likes.user_id = " + userId : ""
-            }
-            AND ${userId ? "TRUE" : "FALSE"}
-        ), TRUE, FALSE
-      ) AS is_liked,
+      ${userId ? isLikedField : ""}
       book_categories.name as category_name
     FROM books
     LEFT JOIN book_categories ON books.category_id = book_categories.id
@@ -49,21 +50,22 @@ export const bookDetail = async (req, res) => {
   let { id } = req.params;
   id = parseInt(id);
 
+  const isLikedField = `
+  IF(
+    EXISTS (
+      SELECT *
+      FROM book_user_likes 
+      WHERE 
+        books.id = book_user_likes.book_id AND
+        book_user_likes.user_id = ${userId}
+    ), TRUE, FALSE
+  ) AS is_liked,
+`;
   const sql = `
     SELECT 
       books.*,
       (SELECT count(*) FROM book_user_likes WHERE books.id = book_user_likes.book_id) AS like_count,
-      IF(
-        EXISTS (
-          SELECT *
-          FROM book_user_likes 
-          WHERE 
-            book_user_likes.book_id = ? ${
-              userId ? "AND book_user_likes.user_id = " + userId : ""
-            }
-            AND ${userId ? "TRUE" : "FALSE"}
-        ), TRUE, FALSE
-      ) AS is_liked,
+      ${userId ? isLikedField : ""}
       book_categories.name as category_name
     FROM books
     LEFT JOIN book_categories ON books.category_id = book_categories.id
