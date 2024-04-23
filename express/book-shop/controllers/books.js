@@ -18,7 +18,8 @@ export const allBooks = async (req, res) => {
     ) AS is_liked,
   `;
   let sql = `
-    SELECT 
+    SELECT
+      SQL_CALC_FOUND_ROWS
       books.*,
       (SELECT count(*) FROM book_user_likes WHERE books.id = book_user_likes.book_id) AS like_count,
       ${userId ? isLikedField : ""}
@@ -39,7 +40,21 @@ export const allBooks = async (req, res) => {
   sql += ` LIMIT ${size} OFFSET ${offset}`;
 
   const [books] = await connection.query(sql);
-  return res.status(200).json(books);
+
+  const [foundRowsResult] = await connection.query("SELECT FOUND_ROWS()");
+  const totalElements = foundRowsResult[0]["FOUND_ROWS()"];
+
+  const apiResult = {
+    data: books,
+    pagination: {
+      page: parseInt(page),
+      size: parseInt(size),
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
+    },
+  };
+
+  return res.status(200).json(apiResult);
 };
 
 export const bookDetail = async (req, res) => {
