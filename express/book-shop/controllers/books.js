@@ -27,21 +27,18 @@ export const allBooks = async (req, res) => {
     LEFT JOIN book_categories ON books.category_id = book_categories.id
     WHERE TRUE
   `;
-  const queryValues = [];
 
   if (categoryId) {
-    sql += "AND `category_id` = ?";
-    queryValues.push(categoryId);
+    sql += ` AND category_id = ${categoryId}`;
   }
 
   if (latest) {
-    sql += "AND `pub_date` BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
+    sql += ` AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
   }
 
-  sql += `LIMIT ${size} OFFSET ${offset}`;
-  console.log(sql);
+  sql += ` LIMIT ${size} OFFSET ${offset}`;
 
-  const [books, _] = await connection.query(sql, queryValues);
+  const [books, _] = await connection.query(sql);
   return res.status(200).json(books);
 };
 
@@ -69,9 +66,9 @@ export const bookDetail = async (req, res) => {
       book_categories.name as category_name
     FROM books
     LEFT JOIN book_categories ON books.category_id = book_categories.id
-    WHERE books.id = ?
+    WHERE books.id = ${id}
   `;
-  const [results, _] = await connection.query(sql, [id, id]);
+  const [results, _] = await connection.query(sql);
 
   if (results.length > 0) {
     return res.status(StatusCodes.OK).json(results[0]);
