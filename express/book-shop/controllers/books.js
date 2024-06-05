@@ -5,7 +5,6 @@ export const allBooks = async (req, res) => {
   const { userId } = req;
   const { categoryId, latest, page = 1, size = 10 } = req.query;
   const offset = (page - 1) * size;
-
   const isLikedField = `
     IF(
       EXISTS (
@@ -120,12 +119,12 @@ export const toggleBookLike = async (req, res) => {
     if (bookUserLike.length < 1) {
       const INSERT_SQL = `INSERT INTO book_user_likes (book_id, user_id) VALUES (${bookId}, ${userId})`;
       await connection.query(INSERT_SQL);
-      return res.status(StatusCodes.OK).json({ isLike: true });
+      return res.status(StatusCodes.OK).json({ isLiked: true });
     }
 
     const DELETE_SQL = `DELETE FROM book_user_likes WHERE user_id = "${userId}" and book_id = "${bookId}"`;
     await connection.query(DELETE_SQL);
-    return res.status(StatusCodes.OK).json({ isLike: false });
+    return res.status(StatusCodes.OK).json({ isLiked: false });
   } catch (error) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

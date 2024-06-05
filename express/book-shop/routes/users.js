@@ -7,6 +7,8 @@ import validationErrorChecker from "../validators/middlewares/validationErrorChe
 const router = express.Router();
 router.use(express.json());
 
+router.post("/authenticate", [authenticate], controller.authenticate);
+
 router.post(
   "/join",
   [...chain.getJoinChains(), validationErrorChecker],
@@ -19,19 +21,17 @@ router.post(
   controller.login
 );
 
+router.post("/logout", [authenticate], controller.logout);
+
 router.post(
-  "/users/reset-password/request",
-  [
-    ...chain.getResetPasswordRequestChains(),
-    authenticate,
-    validationErrorChecker,
-  ],
-  controller.resetPasswordRequest
+  "/users/reset-password/authenticate",
+  [...chain.getresetPasswordAuthenticateChains(), validationErrorChecker],
+  controller.resetPasswordAuthenticate
 );
 
 router.put(
-  "/users/reset-password/complete",
-  [...chain.getResetPasswordChains(), authenticate, validationErrorChecker],
+  "/users/reset-password",
+  [...chain.getResetPasswordChains(), validationErrorChecker],
   controller.resetPassword
 );
 

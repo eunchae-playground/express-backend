@@ -6,7 +6,7 @@ export const convertSnakeToCamelResponse = () => {
     const send = res.send;
     res.send = function (body) {
       if (body != null) {
-        body = camelcaseKeys(JSON.parse(body.toString()));
+        body = camelcaseKeys(JSON.parse(body.toString()), { deep: true });
       }
       send.call(this, Buffer.from(JSON.stringify(body)));
       return res;

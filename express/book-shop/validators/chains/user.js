@@ -13,12 +13,6 @@ const getPasswordChain = () => {
   return body("password").notEmpty().withMessage("비밀번호를 입력해 주세요.");
 };
 
-const getConfirmPasswordChain = () => {
-  return body("confirmPassword")
-    .notEmpty()
-    .withMessage("비밀번호를 입력해 주세요.");
-};
-
 export const getJoinChains = () => {
   return [getEmailChain(), getPasswordChain()];
 };
@@ -27,10 +21,10 @@ export const getLoginChains = () => {
   return [getEmailChain(), getPasswordChain()];
 };
 
-export const getResetPasswordRequestChains = () => {
+export const getresetPasswordAuthenticateChains = () => {
   return [getEmailChain()];
 };
 
 export const getResetPasswordChains = () => {
-  return [getPasswordChain(), getConfirmPasswordChain()];
+  return [getEmailChain(), getPasswordChain()];
 };

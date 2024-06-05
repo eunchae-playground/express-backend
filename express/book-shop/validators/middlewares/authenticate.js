@@ -16,6 +16,12 @@ const authenticate = (req, res, next) => {
     req.userId = decodedJwt.id;
     next();
   } catch (error) {
+    // JWT 에러라면 쿠키 제거
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.clearCookie("access-token");
+    }
+
+    // 에러 케이스에 맞춰서 메세지 return
     if (error instanceof jwt.TokenExpiredError) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
