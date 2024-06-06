@@ -7,7 +7,7 @@ import validationErrorChecker from "../validators/middlewares/validationErrorChe
 const router = express.Router();
 router.use(express.json());
 
-router.post("/authenticate", [authenticate], controller.authenticate);
+router.post("/authenticate", controller.authenticate);
 
 router.post(
   "/join",

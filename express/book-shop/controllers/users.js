@@ -4,8 +4,19 @@ import jwt from "jsonwebtoken";
 import connection from "../db.js";
 
 export const authenticate = async (req, res) => {
-  // 인증에 실패한 경우는 미들웨어에서 처리된다.
-  return res.status(StatusCodes.OK).end();
+  const { "access-token": accessToken } = req.cookies;
+
+  if (!accessToken) {
+    return res.status(StatusCodes.OK).json({ isLogin: false });
+  }
+
+  try {
+    const JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
+    jwt.verify(accessToken, JWT_PRIVATE_KEY);
+    return res.status(StatusCodes.OK).json({ isLogin: true });
+  } catch (error) {
+    return res.status(StatusCodes.OK).json({ isLogin: false });
+  }
 };
 
 export const join = async (req, res) => {
