@@ -25,9 +25,9 @@ export const join = async (req, res) => {
     const { email, password } = req.body;
 
     // 존재하는 유저인지 확인
-    const getUserSql = "SELECT * FROM `users` WHERE `email` = ?";
-    const [userResult] = await connection.query(getUserSql, [email]);
-    if (userResult.length > 0) {
+    const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
+    const [user] = await connection.query(SELECT_USER_SQL, [email]);
+    if (user.length > 0) {
       return res
         .status(StatusCodes.CONFLICT)
         .json({ message: "이미 존재하는 계정입니다." });
@@ -38,9 +38,9 @@ export const join = async (req, res) => {
       .pbkdf2Sync(password, salt, 10000, 64, "sha512")
       .toString("base64");
 
-    const sql =
+    const INSERT_USER_SQL =
       "INSERT INTO `users` (`email`, `password`, `salt`) VALUES (?, ?, ?)";
-    await connection.query(sql, [email, hashedPassword, salt]);
+    await connection.query(INSERT_USER_SQL, [email, hashedPassword, salt]);
 
     return res
       .status(StatusCodes.CREATED)
@@ -55,14 +55,21 @@ export const join = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const sql = "SELECT * FROM `users` WHERE `email` = ?";
-  const [results] = await connection.query(sql, [email]);
-  const { password: hashedPassword, salt, id } = results[0] || {};
-  const hashedInputPassword =
-    results[0] &&
-    crypto.pbkdf2Sync(password, salt, 10000, 64, "sha512").toString("base64");
+  const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
+  const [user] = await connection.query(SELECT_USER_SQL, [email]);
 
-  if (results < 1 || hashedPassword !== hashedInputPassword) {
+  if (user.length === 0) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "유저 정보가 잘못되었습니다." });
+  }
+
+  const { password: hashedPassword, salt, id } = user[0];
+  const requestHashedPassword = crypto
+    .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+    .toString("base64");
+
+  if (hashedPassword !== requestHashedPassword) {
     return res
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "유저 정보가 잘못되었습니다." });
@@ -89,9 +96,9 @@ export const resetPasswordAuthenticate = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const sql = "SELECT * FROM `users` WHERE `email` = ?";
-    const [results] = await connection.query(sql, [email]);
-    if (results.length < 1) {
+    const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
+    const [user] = await connection.query(SELECT_USER_SQL, [email]);
+    if (user.length === 0) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ message: "존재하지 않는 유저입니다." });
@@ -116,9 +123,9 @@ export const resetPassword = async (req, res) => {
       .pbkdf2Sync(password, salt, 10000, 64, "sha512")
       .toString("base64");
 
-    const sql =
+    const SQL =
       "UPDATE `users` SET `password` = ?, `salt` = ? WHERE `email` = ?";
-    await connection.query(sql, [hashedPassword, salt, email]);
+    await connection.query(SQL, [hashedPassword, salt, email]);
     return res.status(StatusCodes.OK).end();
   } catch (error) {
     return res

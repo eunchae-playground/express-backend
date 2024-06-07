@@ -7,7 +7,7 @@ import useLoggedInUser from "../validators/middlewares/useLoggedInUser.js";
 const router = express.Router();
 router.use(express.json());
 
-router.get("/", [useLoggedInUser], controller.allBooks);
+router.get("/", [useLoggedInUser], controller.books);
 
 router.get(
   "/:id([0-9]+)",

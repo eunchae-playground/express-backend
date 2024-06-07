@@ -6,7 +6,7 @@ export const myOrders = async (req, res) => {
   try {
     const { userId } = req;
 
-    const ORDERS_SQL = `
+    const SQL = `
       SELECT
         orders.id,
         delivery_infoes.address,
@@ -23,11 +23,10 @@ export const myOrders = async (req, res) => {
       ON orders.delivery_info_id = delivery_infoes.id
       WHERE user_id = ${userId}
     `;
-    const [ordersResult] = await connection.query(ORDERS_SQL);
+    const [orders] = await connection.query(SQL);
 
-    return res.status(StatusCodes.OK).json(ordersResult);
+    return res.status(StatusCodes.OK).json(orders);
   } catch (error) {
-    console.log(error);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: "서버 오류가 발생했습니다." });
@@ -57,7 +56,7 @@ export const createOrders = async (req, res) => {
       // 내 장바구니에 존재하는 책이면 주문(order) 생성
       const CART_SQL = `SELECT id FROM carts WHERE user_id = ${userId} AND book_id = ${bookId}`;
       const [cartResult] = await connection.query(CART_SQL);
-      if (cartResult.length < 1) {
+      if (cartResult.length === 0) {
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "장바구니에 존재하지 않는 책입니다." });
