@@ -1,7 +1,3 @@
-/*
-김은채
-*/
-
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 import express from "express";
