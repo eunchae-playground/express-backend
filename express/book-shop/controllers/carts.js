@@ -8,7 +8,7 @@ export const myCarts = async (req, res) => {
 
     const CARTS_SQL = `
       SELECT
-        carts.id, carts.amount, books.title, books.image, books.detail, books.price
+        carts.id, books.id as book_id, carts.amount, books.title, books.image, books.detail, books.price
       FROM carts
       LEFT JOIN books
       ON carts.book_id = books.id

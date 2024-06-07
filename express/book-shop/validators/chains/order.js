@@ -6,6 +6,12 @@ const getDeliveryInfoAddressChain = () => {
     .withMessage("주소를 입력해 주세요.");
 };
 
+const getDeliveryInfoDetailAddressChain = () => {
+  return body("deliveryInfo.*.detailAddress")
+    .notEmpty()
+    .withMessage("상세 주소를 입력해 주세요.");
+};
+
 const getDeliveryInfoReceiverChain = () => {
   return body("deliveryInfo.*.receiver")
     .notEmpty()
@@ -18,30 +24,18 @@ const getDeliveryInfoContactChain = () => {
     .withMessage("전화번호를 입력해 주세요.");
 };
 
-const getBookIdChain = () => {
-  return body("bookId")
+const getOrderBooksChain = () => {
+  return body("orderBooks")
     .notEmpty()
-    .withMessage("bookId값이 포함되어 있지 않습니다.")
-    .bail()
-    .isNumeric()
-    .withMessage("bookId값은 숫자여야 합니다.");
-};
-
-const getBookAmountChain = () => {
-  return body("bookAmount")
-    .notEmpty()
-    .withMessage("책의 수량을 입력해 주세요.")
-    .bail()
-    .isNumeric()
-    .withMessage("수량은 숫자여야 합니다.");
+    .withMessage("주문 상품이 존재하지 않습니다.");
 };
 
 export const getCreateOrderChains = () => {
   return [
     getDeliveryInfoAddressChain(),
+    getDeliveryInfoDetailAddressChain(),
     getDeliveryInfoReceiverChain(),
     getDeliveryInfoContactChain(),
-    getBookIdChain(),
-    getBookAmountChain(),
+    getOrderBooksChain(),
   ];
 };

@@ -12,7 +12,7 @@ router.get("/", [authenticate], controller.myOrders);
 router.post(
   "/",
   [...chain.getCreateOrderChains(), authenticate, validationErrorChecker],
-  controller.createOrder
+  controller.createOrders
 );
 
 export default router;
