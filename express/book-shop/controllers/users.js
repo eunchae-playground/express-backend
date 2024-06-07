@@ -1,10 +1,11 @@
 import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
+import { ACCESS_TOKEN_KEY } from "../constants.js";
 import connection from "../db.js";
 
 export const authenticate = async (req, res) => {
-  const { "access-token": accessToken } = req.cookies;
+  const accessToken = req.cookies[ACCESS_TOKEN_KEY];
 
   if (!accessToken) {
     return res.status(StatusCodes.OK).json({ isLogin: false });
@@ -73,14 +74,14 @@ export const login = async (req, res) => {
     issuer: "eunchae",
   });
 
-  res.cookie("access-token", accessToken, {
+  res.cookie(ACCESS_TOKEN_KEY, accessToken, {
     httpOnly: true,
   });
   return res.status(StatusCodes.OK).end();
 };
 
 export const logout = async (req, res) => {
-  res.clearCookie("access-token");
+  res.clearCookie(ACCESS_TOKEN_KEY);
   return res.status(StatusCodes.OK).end();
 };
 

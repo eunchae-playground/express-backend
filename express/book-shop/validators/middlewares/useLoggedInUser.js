@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
+import { ACCESS_TOKEN_KEY } from "../../constants.js";
 
 const useLoggedInUser = (req, res, next) => {
-  const { "access-token": accessToken } = req.cookies;
+  const accessToken = req.cookies[ACCESS_TOKEN_KEY];
 
   if (!accessToken) {
     return next();
