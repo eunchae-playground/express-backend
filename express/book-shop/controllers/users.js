@@ -1,8 +1,9 @@
-import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 import { ACCESS_TOKEN_KEY } from "../constants.js";
 import connection from "../db.js";
+import convertHashedPassword from "../helpers/convertHashedPassword.js";
+import generateSalt from "../helpers/generateSalt.js";
 
 export const authenticate = async (req, res) => {
   const accessToken = req.cookies[ACCESS_TOKEN_KEY];
@@ -33,10 +34,8 @@ export const join = async (req, res) => {
         .json({ message: "이미 존재하는 계정입니다." });
     }
 
-    const salt = crypto.randomBytes(32).toString("base64");
-    const hashedPassword = crypto
-      .pbkdf2Sync(password, salt, 10000, 64, "sha512")
-      .toString("base64");
+    const salt = generateSalt();
+    const hashedPassword = convertHashedPassword(password, salt);
 
     const INSERT_USER_SQL =
       "INSERT INTO `users` (`email`, `password`, `salt`) VALUES (?, ?, ?)";
@@ -65,9 +64,7 @@ export const login = async (req, res) => {
   }
 
   const { password: hashedPassword, salt, id } = user[0];
-  const requestHashedPassword = crypto
-    .pbkdf2Sync(password, salt, 10000, 64, "sha512")
-    .toString("base64");
+  const requestHashedPassword = convertHashedPassword(password, salt);
 
   if (hashedPassword !== requestHashedPassword) {
     return res
@@ -118,10 +115,8 @@ export const resetPassword = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const salt = crypto.randomBytes(32).toString("base64");
-    const hashedPassword = crypto
-      .pbkdf2Sync(password, salt, 10000, 64, "sha512")
-      .toString("base64");
+    const salt = generateSalt();
+    const hashedPassword = convertHashedPassword(password, salt);
 
     const SQL =
       "UPDATE `users` SET `password` = ?, `salt` = ? WHERE `email` = ?";
