@@ -1,6 +1,7 @@
 import { body, param } from "express-validator";
+import validationErrorChecker from "./middlewares/validationErrorChecker.js";
 
-const getIdChain = () => {
+const createIdChain = () => {
   return param("id")
     .notEmpty()
     .withMessage("id값이 존재하지 않습니다.")
@@ -9,7 +10,7 @@ const getIdChain = () => {
     .withMessage("유효하지 않은 id값 입니다.");
 };
 
-const getIdsChain = () => {
+const createIdsChain = () => {
   return body("ids")
     .notEmpty()
     .withMessage("ids값이 존재하지 않습니다.")
@@ -18,7 +19,7 @@ const getIdsChain = () => {
     .withMessage("유효하지 않은 ids값 입니다.");
 };
 
-const getBookIdChain = () => {
+const createBookIdChain = () => {
   return body("bookId")
     .notEmpty()
     .withMessage("bookId값이 존재하지 않습니다.")
@@ -27,7 +28,7 @@ const getBookIdChain = () => {
     .withMessage("유효하지 않은 bookId값 입니다.");
 };
 
-const getAmountChain = () => {
+const createAmountChain = () => {
   return body("amount")
     .notEmpty()
     .withMessage("수량을 입력해 주세요.")
@@ -36,14 +37,14 @@ const getAmountChain = () => {
     .withMessage("유효하지 않은 수량값 입니다.");
 };
 
-export const getAddCartChains = () => {
-  return [getBookIdChain(), getAmountChain()];
+export const getAddCartValidator = () => {
+  return [createBookIdChain(), createAmountChain(), validationErrorChecker];
 };
 
-export const getDeleteCartsChains = () => {
-  return [getIdsChain()];
+export const getDeleteCartsValidator = () => {
+  return [createIdsChain(), validationErrorChecker];
 };
 
-export const getDeleteCartChains = () => {
-  return [getIdChain()];
+export const getDeleteCartValidator = () => {
+  return [createIdChain(), validationErrorChecker];
 };

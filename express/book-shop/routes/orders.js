@@ -1,8 +1,7 @@
 import express from "express";
 import * as controller from "../controllers/orders.js";
-import * as chain from "../validators/chains/order.js";
 import authenticate from "../validators/middlewares/authenticate.js";
-import validationErrorChecker from "../validators/middlewares/validationErrorChecker.js";
+import * as validator from "../validators/order.js";
 
 const router = express.Router();
 router.use(express.json());
@@ -11,7 +10,7 @@ router.get("/", [authenticate], controller.myOrders);
 
 router.post(
   "/",
-  [...chain.getCreateOrderChains(), authenticate, validationErrorChecker],
+  [...validator.getCreateOrderValidator(), authenticate],
   controller.createOrders
 );
 
