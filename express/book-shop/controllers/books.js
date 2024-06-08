@@ -1,21 +1,17 @@
 import { StatusCodes } from "http-status-codes";
 import connection from "../db.js";
 
-const getIsLikedFieldSQL = (userId) => {
-  return userId
-    ? `
-    IF(
-      EXISTS (
-        SELECT *
-        FROM book_user_likes 
-        WHERE 
-          books.id = book_user_likes.book_id AND
-          book_user_likes.user_id = ${userId}
-      ), TRUE, FALSE
-    ) AS is_liked,
-    `
-    : "";
-};
+const isLikedFieldSQL = `
+  IF(
+    EXISTS (
+      SELECT *
+      FROM book_user_likes 
+      WHERE 
+        books.id = book_user_likes.book_id AND
+        book_user_likes.user_id = ?
+    ), TRUE, FALSE
+  ) AS is_liked,
+`;
 
 export const books = async (req, res) => {
   const { userId } = req;
@@ -27,20 +23,30 @@ export const books = async (req, res) => {
       SQL_CALC_FOUND_ROWS
       books.*,
       (SELECT count(*) FROM book_user_likes WHERE books.id = book_user_likes.book_id) AS like_count,
-      ${getIsLikedFieldSQL(userId)}
+      ${userId ? isLikedFieldSQL : ""}
       book_categories.name as category_name
     FROM books
     LEFT JOIN book_categories ON books.category_id = book_categories.id
     WHERE TRUE
-    ${categoryId ? `AND category_id = ${categoryId}` : ""}
+    ${categoryId ? `AND category_id = ?` : ""}
     ${
       latest
         ? `AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`
         : ""
     }
-    LIMIT ${size} OFFSET ${offset}
+    LIMIT ? OFFSET ?
   `;
-  const [books] = await connection.query(SQL);
+
+  const queryValues = [];
+  if (userId) {
+    queryValues.push(userId);
+  }
+  if (categoryId) {
+    queryValues.push(categoryId);
+  }
+  queryValues.push(size, offset);
+
+  const [books] = await connection.query(SQL, queryValues);
 
   const [foundRowsResult] = await connection.query("SELECT FOUND_ROWS()");
   const totalElements = foundRowsResult[0]["FOUND_ROWS()"];
@@ -67,13 +73,20 @@ export const bookDetail = async (req, res) => {
     SELECT 
       books.*,
       (SELECT count(*) FROM book_user_likes WHERE books.id = book_user_likes.book_id) AS like_count,
-      ${getIsLikedFieldSQL(userId)}
+      ${userId ? isLikedFieldSQL : ""}
       book_categories.name as category_name
     FROM books
     LEFT JOIN book_categories ON books.category_id = book_categories.id
-    WHERE books.id = ${id}
+    WHERE books.id = ?
   `;
-  const [book] = await connection.query(SQL);
+
+  const queryValues = [];
+  if (userId) {
+    queryValues.push(userId);
+  }
+  queryValues.push(id);
+
+  const [book] = await connection.query(SQL, queryValues);
 
   if (book.length === 0) {
     return res
@@ -96,8 +109,8 @@ export const toggleBookLike = async (req, res) => {
     const { userId } = req;
     const { id: bookId } = req.params;
 
-    const SELECT_BOOK_SQL = `SELECT * FROM books WHERE id = ${bookId}`;
-    const [book] = await connection.query(SELECT_BOOK_SQL);
+    const SELECT_BOOK_SQL = "SELECT * FROM books WHERE id = ?";
+    const [book] = await connection.query(SELECT_BOOK_SQL, [bookId]);
 
     if (book.length === 0) {
       return res
@@ -105,17 +118,23 @@ export const toggleBookLike = async (req, res) => {
         .json({ message: "존재하지 않는 책입니다." });
     }
 
-    const SELECT_BOOK_USER_LIKE_SQL = `SELECT * FROM book_user_likes WHERE user_id = "${userId}" and book_id = "${bookId}"`;
-    const [bookUserLike] = await connection.query(SELECT_BOOK_USER_LIKE_SQL);
+    const SELECT_BOOK_USER_LIKE_SQL =
+      "SELECT * FROM book_user_likes WHERE user_id = ? and book_id = ?";
+    const [bookUserLike] = await connection.query(SELECT_BOOK_USER_LIKE_SQL, [
+      userId,
+      bookId,
+    ]);
 
     if (bookUserLike.length < 1) {
-      const INSERT_BOOK_SQL = `INSERT INTO book_user_likes (book_id, user_id) VALUES (${bookId}, ${userId})`;
-      await connection.query(INSERT_BOOK_SQL);
+      const INSERT_BOOK_SQL =
+        "INSERT INTO book_user_likes (user_id, book_id) VALUES (?, ?)";
+      await connection.query(INSERT_BOOK_SQL, [userId, bookId]);
       return res.status(StatusCodes.OK).json({ isLiked: true });
     }
 
-    const DELETE_BOOK_SQL = `DELETE FROM book_user_likes WHERE user_id = "${userId}" and book_id = "${bookId}"`;
-    await connection.query(DELETE_BOOK_SQL);
+    const DELETE_BOOK_SQL =
+      "DELETE FROM book_user_likes WHERE user_id = ? and book_id = ?";
+    await connection.query(DELETE_BOOK_SQL, [userId, bookId]);
     return res.status(StatusCodes.OK).json({ isLiked: false });
   } catch (error) {
     return res
