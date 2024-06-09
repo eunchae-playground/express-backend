@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import connection from "../db.js";
+import errorHandler from "./helpers/errorHandler.js";
 
 const isLikedFieldSQL = `
   IF(
@@ -13,7 +14,7 @@ const isLikedFieldSQL = `
   ) AS is_liked,
 `;
 
-export const books = async (req, res) => {
+export const books = errorHandler(async (req, res) => {
   const { userId } = req;
   const { categoryId, latest, page = 1, size = 10 } = req.query;
   const offset = (page - 1) * size;
@@ -62,9 +63,9 @@ export const books = async (req, res) => {
   };
 
   return res.status(StatusCodes.OK).json(apiResult);
-};
+});
 
-export const bookDetail = async (req, res) => {
+export const bookDetail = errorHandler(async (req, res) => {
   const { userId } = req;
   let { id } = req.params;
   id = parseInt(id);
@@ -95,50 +96,44 @@ export const bookDetail = async (req, res) => {
   }
 
   return res.status(StatusCodes.OK).json(book[0]);
-};
+});
 
-export const allBookCategories = async (req, res) => {
+export const allBookCategories = errorHandler(async (req, res) => {
   const SQL = "SELECT * FROM `book_categories`";
   const [bookCategories] = await connection.query(SQL);
 
   return res.status(StatusCodes.OK).json(bookCategories);
-};
+});
 
-export const toggleBookLike = async (req, res) => {
-  try {
-    const { userId } = req;
-    const { id: bookId } = req.params;
+export const toggleBookLike = errorHandler(async (req, res) => {
+  const { userId } = req;
+  const { id: bookId } = req.params;
 
-    const SELECT_BOOK_SQL = "SELECT * FROM books WHERE id = ?";
-    const [book] = await connection.query(SELECT_BOOK_SQL, [bookId]);
+  const SELECT_BOOK_SQL = "SELECT * FROM books WHERE id = ?";
+  const [book] = await connection.query(SELECT_BOOK_SQL, [bookId]);
 
-    if (book.length === 0) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ message: "존재하지 않는 책입니다." });
-    }
-
-    const SELECT_BOOK_USER_LIKE_SQL =
-      "SELECT * FROM book_user_likes WHERE user_id = ? and book_id = ?";
-    const [bookUserLike] = await connection.query(SELECT_BOOK_USER_LIKE_SQL, [
-      userId,
-      bookId,
-    ]);
-
-    if (bookUserLike.length < 1) {
-      const INSERT_BOOK_SQL =
-        "INSERT INTO book_user_likes (user_id, book_id) VALUES (?, ?)";
-      await connection.query(INSERT_BOOK_SQL, [userId, bookId]);
-      return res.status(StatusCodes.OK).json({ isLiked: true });
-    }
-
-    const DELETE_BOOK_SQL =
-      "DELETE FROM book_user_likes WHERE user_id = ? and book_id = ?";
-    await connection.query(DELETE_BOOK_SQL, [userId, bookId]);
-    return res.status(StatusCodes.OK).json({ isLiked: false });
-  } catch (error) {
+  if (book.length === 0) {
     return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "서버 오류가 발생했습니다." });
+      .status(StatusCodes.NOT_FOUND)
+      .json({ message: "존재하지 않는 책입니다." });
   }
-};
+
+  const SELECT_BOOK_USER_LIKE_SQL =
+    "SELECT * FROM book_user_likes WHERE user_id = ? and book_id = ?";
+  const [bookUserLike] = await connection.query(SELECT_BOOK_USER_LIKE_SQL, [
+    userId,
+    bookId,
+  ]);
+
+  if (bookUserLike.length < 1) {
+    const INSERT_BOOK_SQL =
+      "INSERT INTO book_user_likes (user_id, book_id) VALUES (?, ?)";
+    await connection.query(INSERT_BOOK_SQL, [userId, bookId]);
+    return res.status(StatusCodes.OK).json({ isLiked: true });
+  }
+
+  const DELETE_BOOK_SQL =
+    "DELETE FROM book_user_likes WHERE user_id = ? and book_id = ?";
+  await connection.query(DELETE_BOOK_SQL, [userId, bookId]);
+  return res.status(StatusCodes.OK).json({ isLiked: false });
+});
