@@ -1,16 +1,22 @@
 // Get the client
-import mysql from 'mysql2/promise';
+import mysql from "mysql2/promise";
 
 // Create the connection to database
-export const connectionOption = {
+export const poolOption = {
   host: "localhost",
   user: "root",
   password: "root",
   database: "book_shop",
   dateStrings: true,
-}
+  waitForConnections: true,
+  connectionLimit: 10,
+  maxIdle: 10,
+  idleTimeout: 60000,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+};
 
-const connection = await mysql.createConnection(connectionOption);
+const pool = mysql.createPool(poolOption);
 
-
-export default connection;
+export default pool;

@@ -1,45 +1,31 @@
 import { StatusCodes } from "http-status-codes";
-import jwt from "jsonwebtoken";
 import { ACCESS_TOKEN_KEY } from "../constants.js";
 import connection from "../db.js";
 import convertHashedPassword from "../helpers/convertHashedPassword.js";
 import generateSalt from "../helpers/generateSalt.js";
+import userService from "../services/userService.js";
 import errorHandler from "./helpers/errorHandler.js";
 
 export const authenticate = errorHandler(async (req, res) => {
   const accessToken = req.cookies[ACCESS_TOKEN_KEY];
 
-  if (!accessToken) {
-    return res.status(StatusCodes.OK).json({ isLogin: false });
-  }
+  const isLogin = await userService.verifyLoginStatus({ accessToken });
 
-  try {
-    const JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
-    jwt.verify(accessToken, JWT_PRIVATE_KEY);
-    return res.status(StatusCodes.OK).json({ isLogin: true });
-  } catch (error) {
-    return res.status(StatusCodes.OK).json({ isLogin: false });
-  }
+  return res.status(StatusCodes.OK).json({ isLogin });
 });
 
 export const join = errorHandler(async (req, res) => {
+  const { connection } = req;
   const { email, password } = req.body;
 
-  // 존재하는 유저인지 확인
-  const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
-  const [user] = await connection.query(SELECT_USER_SQL, [email]);
-  if (user.length > 0) {
+  const user = await userService.getUser({ connection, email });
+  if (user) {
     return res
       .status(StatusCodes.CONFLICT)
       .json({ message: "이미 존재하는 계정입니다." });
   }
 
-  const salt = generateSalt();
-  const hashedPassword = convertHashedPassword(password, salt);
-
-  const INSERT_USER_SQL =
-    "INSERT INTO `users` (`email`, `password`, `salt`) VALUES (?, ?, ?)";
-  await connection.query(INSERT_USER_SQL, [email, hashedPassword, salt]);
+  await userService.join({ connection, email, password });
 
   return res
     .status(StatusCodes.CREATED)
@@ -47,35 +33,25 @@ export const join = errorHandler(async (req, res) => {
 });
 
 export const login = errorHandler(async (req, res) => {
+  const { connection } = req;
   const { email, password } = req.body;
 
-  const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
-  const [user] = await connection.query(SELECT_USER_SQL, [email]);
-
-  if (user.length === 0) {
-    return res
-      .status(StatusCodes.UNAUTHORIZED)
-      .json({ message: "유저 정보가 잘못되었습니다." });
-  }
-
-  const { password: hashedPassword, salt, id } = user[0];
-  const requestHashedPassword = convertHashedPassword(password, salt);
-
-  if (hashedPassword !== requestHashedPassword) {
-    return res
-      .status(StatusCodes.UNAUTHORIZED)
-      .json({ message: "유저 정보가 잘못되었습니다." });
-  }
-
-  const JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
-  const accessToken = jwt.sign({ id }, JWT_PRIVATE_KEY, {
-    expiresIn: "30m",
-    issuer: "eunchae",
+  const isValidUser = await userService.validateUser({
+    connection,
+    email,
+    password,
   });
+  if (!isValidUser) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "유저 정보가 잘못되었습니다." });
+  }
 
+  const accessToken = await userService.issueAccessToken({ connection, email });
   res.cookie(ACCESS_TOKEN_KEY, accessToken, {
     httpOnly: true,
   });
+
   return res.status(StatusCodes.OK).end();
 });
 
@@ -85,11 +61,11 @@ export const logout = errorHandler(async (req, res) => {
 });
 
 export const resetPasswordAuthenticate = errorHandler(async (req, res) => {
+  const { connection } = req;
   const { email } = req.body;
 
-  const SELECT_USER_SQL = "SELECT * FROM `users` WHERE `email` = ?";
-  const [user] = await connection.query(SELECT_USER_SQL, [email]);
-  if (user.length === 0) {
+  const user = await userService.getUser({ connection, email });
+  if (!user) {
     return res
       .status(StatusCodes.NOT_FOUND)
       .json({ message: "존재하지 않는 유저입니다." });
@@ -100,6 +76,7 @@ export const resetPasswordAuthenticate = errorHandler(async (req, res) => {
   return res.status(StatusCodes.OK).end();
 });
 
+// TODO: 이메일 인증 토큰 받아야 초기화하는 로직으로 변경 & Service 분리
 export const resetPassword = errorHandler(async (req, res) => {
   const { email, password } = req.body;
 
