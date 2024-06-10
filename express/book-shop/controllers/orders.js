@@ -6,25 +6,43 @@ export const myOrders = errorHandler(async (req, res) => {
   const { userId } = req;
 
   const SQL = `
-      SELECT
+    SELECT 
         orders.id,
+        orders.ordered_at,
         delivery_infoes.address,
         delivery_infoes.receiver,
-        delivery_infoes.address,
-        books.title as book_title,
-        books.price as book_price,
-        orders.book_amount,
-        orders.ordered_at
-      FROM orders
-      LEFT JOIN books
-        ON orders.book_id = books.id
-      LEFT JOIN delivery_infoes
-        ON orders.delivery_info_id = delivery_infoes.id
-      WHERE user_id = ?
-    `;
-  const [orders] = await connection.query(SQL, [userId]);
+        JSON_ARRAYAGG(  
+            JSON_OBJECT(
+                'title', books.title,
+                'price', books.price,
+                'amount', order_books.book_amount
+            )
+        ) AS order_books
+    FROM 
+        orders
+    JOIN 
+        delivery_infoes ON orders.delivery_info_id = delivery_infoes.id
+    JOIN 
+        order_books ON orders.id = order_books.order_id
+    JOIN 
+        books ON order_books.book_id = books.id
+    WHERE user_id = ? 
+    GROUP BY 
+        orders.id, 
+        orders.ordered_at, 
+        delivery_infoes.address, 
+        delivery_infoes.receiver
+    ORDER BY ordered_at DESC
+  `;
 
-  return res.status(StatusCodes.OK).json(orders);
+  const [myOrders] = await connection.query(SQL, [userId]);
+
+  const parsedMyOrders = myOrders.map((myOrder) => ({
+    ...myOrder,
+    order_books: JSON.parse(myOrder.order_books),
+  }));
+
+  return res.status(StatusCodes.OK).json(parsedMyOrders);
 });
 
 export const createOrders = errorHandler(
@@ -47,7 +65,22 @@ export const createOrders = errorHandler(
       CREATE_DELIVERY_INFO_SQL,
       [address, detailAddress, receiver, contact]
     );
+    const deliveryInfoId = createDelieveryInfoResult.insertId;
 
+    // order 생성
+    const CREATE_ORDER_SQL = `
+      INSERT INTO orders
+        (user_id, delivery_info_id)
+      VALUES
+        (?, ?)
+    `;
+    const [createOrderResult] = await connectionPool.query(CREATE_ORDER_SQL, [
+      userId,
+      deliveryInfoId,
+    ]);
+    const orderId = createOrderResult.insertId;
+
+    // 장바구니에 존재하는 책이면 order_book 생성
     for (const orderBook of orderBooks) {
       const { bookId, bookAmount } = orderBook;
 
@@ -65,17 +98,16 @@ export const createOrders = errorHandler(
           .json({ message: "장바구니에 존재하지 않는 책입니다." });
       }
 
-      const CREATE_ORDER_SQL = `
-        INSERT INTO orders
-          (user_id, book_id, book_amount, delivery_info_id)
+      const CREATE_ORDER_BOOK_SQL = `
+        INSERT INTO order_books
+          (order_id, book_id, book_amount)
         VALUES
-          (?, ?, ?, ?)
+          (?, ?, ?)
       `;
-      await connectionPool.query(CREATE_ORDER_SQL, [
-        userId,
+      await connectionPool.query(CREATE_ORDER_BOOK_SQL, [
+        orderId,
         bookId,
         bookAmount,
-        createDelieveryInfoResult.insertId,
       ]);
     }
 
