@@ -1,7 +1,10 @@
 import crypto from "crypto";
 
 const generateSalt = () => {
-  return crypto.randomBytes(32).toString("base64");
+  const BYTE_SIZE = 32;
+  const ENCODING = "base64";
+
+  return crypto.randomBytes(BYTE_SIZE).toString(ENCODING);
 };
 
 export default generateSalt;
